@@ -1,3 +1,5 @@
+export type ResultTextSize = "sm" | "md" | "lg";
+
 export type AppSettings = {
   apiKey: string;
   model: string;
@@ -5,6 +7,7 @@ export type AppSettings = {
   targetLang: string;
   autoCapture: boolean;
   resultHeight: number;
+  resultTextSize: ResultTextSize;
 };
 
 export type CaptureInsets = {
@@ -20,6 +23,9 @@ export type TranslateResult = {
   translation: string;
 };
 
+/** Where the result strip sits relative to the glass. Manual toggle only. */
+export type ResultsPlacement = "above" | "below";
+
 export const DEFAULT_SETTINGS: AppSettings = {
   apiKey: "",
   model: "google/gemini-2.5-flash",
@@ -27,7 +33,18 @@ export const DEFAULT_SETTINGS: AppSettings = {
   targetLang: "en",
   autoCapture: true,
   resultHeight: 120,
+  resultTextSize: "md",
 };
+
+export const RESULT_TEXT_SIZES: {
+  id: ResultTextSize;
+  label: string;
+  sample: string;
+}[] = [
+  { id: "sm", label: "Small", sample: "A" },
+  { id: "md", label: "Medium", sample: "A" },
+  { id: "lg", label: "Large", sample: "A" },
+];
 
 export const LANGUAGES = [
   { code: "auto", label: "Detect language" },

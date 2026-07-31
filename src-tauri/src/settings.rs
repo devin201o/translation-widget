@@ -30,10 +30,16 @@ pub struct AppSettings {
     pub auto_capture: bool,
     #[serde(default = "default_result_height")]
     pub result_height: u32,
+    #[serde(default = "default_result_text_size")]
+    pub result_text_size: String,
 }
 
 fn default_result_height() -> u32 {
     120
+}
+
+fn default_result_text_size() -> String {
+    "md".into()
 }
 
 impl Default for AppSettings {
@@ -45,6 +51,7 @@ impl Default for AppSettings {
             target_lang: "en".into(),
             auto_capture: true,
             result_height: default_result_height(),
+            result_text_size: default_result_text_size(),
         }
     }
 }
