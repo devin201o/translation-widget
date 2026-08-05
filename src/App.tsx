@@ -9,7 +9,9 @@ import { useAutoCapture } from "./hooks/useAutoCapture";
 import {
   closeResultsWindow,
   openResultsWindow,
+  positionResultsNearMain,
 } from "./lib/detachedWindow";
+import { pickGlassRegion } from "./lib/regionSelect";
 import {
   emitResultsState,
   listenResultsAttach,
@@ -23,6 +25,7 @@ import { getSettings, ocrTranslate, saveSettings } from "./lib/tauri";
 import {
   adjustWindowHeight,
   minWindowHeightForResult,
+  setWindowForGlassRect,
 } from "./lib/windowResize";
 import {
   CHROME_INSETS,
@@ -101,6 +104,7 @@ export default function App() {
   const detachedRef = useRef(false);
   /** True when the main window height already includes space for an attached result strip. */
   const expandedForResultsRef = useRef(false);
+  const pickingRegionRef = useRef(false);
 
   settingsRef.current = settings;
   resultHeightRef.current = resultHeight;
@@ -358,6 +362,45 @@ export default function App() {
     await getCurrentWindow().close();
   };
 
+  const onResizeRegion = async () => {
+    if (busyRef.current || pickingRegionRef.current) return;
+    pickingRegionRef.current = true;
+
+    const main = getCurrentWindow();
+    const attachedResults = hasResultRef.current && !detachedRef.current;
+    const insets = buildInsets(
+      attachedResults ? resultHeightRef.current : null,
+      placementRef.current,
+      detachedRef.current,
+    );
+
+    try {
+      const region = await pickGlassRegion();
+      if (region) {
+        await setWindowForGlassRect(region, insets);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      pickingRegionRef.current = false;
+      await main.show();
+      await main.setFocus();
+      if (detachedRef.current) {
+        const results = await WebviewWindow.getByLabel(RESULTS_WINDOW_LABEL);
+        if (results) {
+          const factor = await main.scaleFactor();
+          const size = await main.outerSize();
+          const width = size.width / factor;
+          await positionResultsNearMain(
+            width,
+            Math.max(140, resultHeightRef.current + 40),
+          );
+          await results.show();
+        }
+      }
+    }
+  };
+
   const hasResult =
     Boolean(error) || Boolean(sourceText) || Boolean(translation);
   const showAttachedResults = hasResult && !resultsDetached;
@@ -421,7 +464,10 @@ export default function App() {
 
       {showAttachedResults && resultsPlacement === "above" && resultStrip}
 
-      <GlassViewport busy={busy} />
+      <GlassViewport
+        busy={busy}
+        onResizeRegion={() => void onResizeRegion()}
+      />
 
       {showAttachedResults && resultsPlacement === "below" && resultStrip}
 
