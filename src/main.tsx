@@ -2,12 +2,19 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import DetachedResultsApp from "./DetachedResultsApp";
+import RegionSelectApp from "./components/RegionSelectApp";
 
 const params = new URLSearchParams(window.location.search);
-const isResultsView = params.get("view") === "results";
+const view = params.get("view");
+
+function Root() {
+  if (view === "results") return <DetachedResultsApp />;
+  if (view === "region-select") return <RegionSelectApp />;
+  return <App />;
+}
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    {isResultsView ? <DetachedResultsApp /> : <App />}
+    <Root />
   </React.StrictMode>,
 );
