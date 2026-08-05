@@ -9,7 +9,6 @@ import { useAutoCapture } from "./hooks/useAutoCapture";
 import {
   closeResultsWindow,
   openResultsWindow,
-  positionResultsNearMain,
 } from "./lib/detachedWindow";
 import { pickGlassRegion } from "./lib/regionSelect";
 import {
@@ -388,13 +387,7 @@ export default function App() {
       if (detachedRef.current) {
         const results = await WebviewWindow.getByLabel(RESULTS_WINDOW_LABEL);
         if (results) {
-          const factor = await main.scaleFactor();
-          const size = await main.outerSize();
-          const width = size.width / factor;
-          await positionResultsNearMain(
-            width,
-            Math.max(140, resultHeightRef.current + 40),
-          );
+          // Keep detached results where the user left them; only unhide.
           await results.show();
         }
       }
