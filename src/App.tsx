@@ -10,7 +10,7 @@ import {
   closeResultsWindow,
   openResultsWindow,
 } from "./lib/detachedWindow";
-import { pickGlassRegion } from "./lib/regionSelect";
+import { pickScreenRegion } from "./lib/regionSelect";
 import {
   emitResultsState,
   listenResultsAttach,
@@ -374,7 +374,7 @@ export default function App() {
     );
 
     try {
-      const region = await pickGlassRegion();
+      const region = await pickScreenRegion();
       if (region) {
         await setWindowForGlassRect(region, insets);
       }

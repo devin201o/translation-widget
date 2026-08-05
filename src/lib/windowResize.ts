@@ -99,3 +99,23 @@ export async function setWindowForGlassRect(
   await win.setPosition(new LogicalPosition(x, y));
   await win.setSize(new LogicalSize(width, height));
 }
+
+const MIN_RESULTS_WIDTH = 220;
+const MIN_RESULTS_HEIGHT = 96;
+
+/**
+ * Position and size the current window so its outer bounds match the given
+ * logical screen rectangle (used for the detached results window).
+ */
+export async function setCurrentWindowOuterRect(
+  rect: GlassRegion,
+): Promise<void> {
+  const width = Math.max(MIN_RESULTS_WIDTH, Math.round(rect.width));
+  const height = Math.max(MIN_RESULTS_HEIGHT, Math.round(rect.height));
+  const x = Math.round(rect.x);
+  const y = Math.round(rect.y);
+
+  const win = getCurrentWindow();
+  await win.setPosition(new LogicalPosition(x, y));
+  await win.setSize(new LogicalSize(width, height));
+}

@@ -1,5 +1,11 @@
-import { useEffect, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { DrawRegionIcon } from "./components/DrawRegionIcon";
+import {
+  MAIN_WINDOW_LABEL,
+  pickScreenRegion,
+} from "./lib/regionSelect";
 import {
   emitResultsAttach,
   emitResultsDismiss,
@@ -13,6 +19,7 @@ import {
   RESULT_TEXT_SIZES,
   type ResultTextSize,
 } from "./lib/types";
+import { setCurrentWindowOuterRect } from "./lib/windowResize";
 import "./styles.css";
 
 function normalizeTextSize(value: unknown): ResultTextSize {
@@ -28,6 +35,7 @@ export default function DetachedResultsApp() {
     error: null,
   });
   const [sizeMenuOpen, setSizeMenuOpen] = useState(false);
+  const pickingRegionRef = useRef(false);
 
   useEffect(() => {
     const unsubs: Array<() => void> = [];
@@ -69,6 +77,26 @@ export default function DetachedResultsApp() {
     void getCurrentWindow().startDragging();
   };
 
+  const onResizeRegion = async () => {
+    if (pickingRegionRef.current) return;
+    pickingRegionRef.current = true;
+    const results = getCurrentWindow();
+    try {
+      const region = await pickScreenRegion();
+      if (region) {
+        await setCurrentWindowOuterRect(region);
+      }
+    } finally {
+      pickingRegionRef.current = false;
+      await results.show();
+      await results.setFocus();
+      const main = await WebviewWindow.getByLabel(MAIN_WINDOW_LABEL);
+      if (main) {
+        await main.show();
+      }
+    }
+  };
+
   const empty = !state.error && !state.sourceText && !state.translation;
 
   return (
@@ -82,6 +110,15 @@ export default function DetachedResultsApp() {
           Translation
         </span>
         <div className="result-actions detached-actions">
+          <button
+            type="button"
+            className="icon-btn draw-region-btn"
+            onClick={() => void onResizeRegion()}
+            title="Draw window region"
+            aria-label="Draw window region"
+          >
+            <DrawRegionIcon />
+          </button>
           <div className="text-size-control">
             <button
               type="button"

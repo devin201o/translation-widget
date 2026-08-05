@@ -2,7 +2,6 @@ import { emit, listen } from "@tauri-apps/api/event";
 import {
   availableMonitors,
   currentMonitor,
-  getCurrentWindow,
   primaryMonitor,
   type Monitor,
 } from "@tauri-apps/api/window";
@@ -10,6 +9,7 @@ import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { RESULTS_WINDOW_LABEL } from "./resultsSync";
 
 export const REGION_SELECT_WINDOW_LABEL = "region-select";
+export const MAIN_WINDOW_LABEL = "main";
 
 export const REGION_EVENTS = {
   selected: "region://selected",
@@ -74,6 +74,13 @@ async function closeRegionSelectWindow(): Promise<void> {
   await existing.destroy();
 }
 
+async function hideAppWindows(): Promise<void> {
+  const main = await WebviewWindow.getByLabel(MAIN_WINDOW_LABEL);
+  const results = await WebviewWindow.getByLabel(RESULTS_WINDOW_LABEL);
+  if (main) await main.hide();
+  if (results) await results.hide();
+}
+
 export async function emitRegionSelected(region: GlassRegion): Promise<void> {
   await emit(REGION_EVENTS.selected, region);
 }
@@ -83,19 +90,12 @@ export async function emitRegionCancelled(): Promise<void> {
 }
 
 /**
- * Hide the main (and results) window, open a fullscreen picker, and resolve
- * with the selected glass region in logical screen coordinates — or null if
- * cancelled.
+ * Hide app windows by label, open a fullscreen picker, and resolve with the
+ * selected region in logical screen coordinates — or null if cancelled.
+ * Works when called from either the main or results window.
  */
-export async function pickGlassRegion(): Promise<GlassRegion | null> {
-  const main = getCurrentWindow();
-  const results = await WebviewWindow.getByLabel(RESULTS_WINDOW_LABEL);
-
-  await main.hide();
-  if (results) {
-    await results.hide();
-  }
-
+export async function pickScreenRegion(): Promise<GlassRegion | null> {
+  await hideAppWindows();
   await closeRegionSelectWindow();
 
   const bounds = await virtualScreenBounds();
@@ -151,4 +151,9 @@ export async function pickGlassRegion(): Promise<GlassRegion | null> {
   } finally {
     await closeRegionSelectWindow();
   }
+}
+
+/** @deprecated Prefer pickScreenRegion — alias for callers that size the glass. */
+export async function pickGlassRegion(): Promise<GlassRegion | null> {
+  return pickScreenRegion();
 }
