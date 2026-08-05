@@ -36,8 +36,11 @@ export default function DetachedResultsApp() {
         ...payload,
         textSize: normalizeTextSize(payload.textSize),
       });
-    }).then((u) => unsubs.push(u));
-    void emitResultsRequestState();
+    }).then((u) => {
+      unsubs.push(u);
+      // Request only after the listener is registered so the reply is not missed.
+      void emitResultsRequestState();
+    });
     return () => unsubs.forEach((u) => u());
   }, []);
 
@@ -130,7 +133,17 @@ export default function DetachedResultsApp() {
           <button
             type="button"
             className="icon-btn dismiss-btn"
-            onClick={() => void emitResultsDismiss()}
+            onClick={() => {
+              void (async () => {
+                // Notify main if alive; always destroy locally so X works after glass closes.
+                try {
+                  await emitResultsDismiss();
+                } catch {
+                  // Main may already be gone.
+                }
+                await getCurrentWindow().destroy();
+              })();
+            }}
             title="Dismiss"
             aria-label="Dismiss"
           >

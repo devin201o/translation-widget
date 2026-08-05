@@ -58,7 +58,8 @@ export async function openResultsWindow(
 export async function closeResultsWindow(): Promise<void> {
   const existing = await WebviewWindow.getByLabel(RESULTS_WINDOW_LABEL);
   if (existing) {
-    await existing.close();
+    // destroy() skips closeRequested and reliably tears down the window.
+    await existing.destroy();
   }
 }
 
